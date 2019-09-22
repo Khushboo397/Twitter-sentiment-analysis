@@ -1,0 +1,30 @@
+CREATE EXTERNAL TABLE tweets (
+    id BIGINT,
+    created_at STRING,
+    source STRING,
+    favorited BOOLEAN,
+    retweet_count INT,
+    retweeted_status STRUCT<
+    text:STRING,
+    `user`:STRUCT<screen_name:STRING,name:STRING>>,
+    entities STRUCT<
+    urls:ARRAY<STRUCT<expanded_url:STRING>>,
+    user_mentions:ARRAY<STRUCT<screen_name:STRING,name:STRING>>,
+    hashtags:ARRAY<STRUCT<text:STRING>>>,
+    text STRING,
+    `user` STRUCT<
+    screen_name:STRING,
+    name:STRING,
+    friends_count:INT,
+    followers_count:INT,
+    statuses_count:INT,
+    verified:BOOLEAN,
+    utc_offset:INT,
+    time_zone:STRING>,
+    in_reply_to_screen_name STRING
+    )
+
+ROW FORMAT DELIMITED Fields terminated by ',' STORED as textfile  location '/priyank';
+
+
+SELECT t.retweeted_screen_name, sum(retweets) AS total_retweets, count(*) AS tweet_count FROM (SELECT retweeted_status.user.screen_name as retweeted_screen_name, retweeted_status.text, max(retweet_count) as retweets FROM tweets GROUP BY retweeted_status.user.screen_name, retweeted_status.text) t GROUP BY t.retweeted_screen_name ORDER BY total_retweets DESC LIMIT 10;
